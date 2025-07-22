@@ -5,6 +5,8 @@ import com.sun.jna.ptr.IntByReference;
 import javax.swing.JOptionPane;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Set;
+import java.util.HashSet;
 
 
     public class UserCall {
@@ -42,81 +44,144 @@ import java.util.Date;
             handleReader = handleRef.getValue();
         }
 
-        return result == 1;
-    }
+            return result == 1;
+        }
 
         public static boolean OpenReader() {
-        if (handleReader == null) {
-            System.err.println("Handle é nulo antes do SAAT_Open.");
-            return false;
-        }
+            if (handleReader == null) {
+                return false;
+            }
 
         int result = RFIDLibrary.INSTANCE.SAAT_Open(handleReader);
         System.out.println("Resultado de SAAT_Open: " + result);
 
-        if (result != 1) {
-            handleReader = null;  
-            return false;
+            if (result != 1) {
+                handleReader = null;  
+                return false;
+            }
+            return true;
         }
-        return true;
-    }
 
     public static int PowerOff() {
     if (handleReader == null) {
-        return 0; // ou -1, se quiseres indicar erro
+        return 0; 
     }
 
     return RFIDLibrary.INSTANCE.SAAT_PowerOff(handleReader);
     }
 
-    public static void log(String mensagem) {
-        String timestamp = new SimpleDateFormat("HH:mm:ss").format(new Date());
-        System.out.println("[" + timestamp + "] " + mensagem);
+    public static boolean CloseConnection() {
+        
+    if (handleReader == null) {
+        return false;
     }
-
-
-
-        public static boolean CloseConnection() {
-        if (handleReader == null) {
-            return false;
-        }
-
-        int result = RFIDLibrary.INSTANCE.SAAT_Close(handleReader);
-        handleReader = null;
-        return result == 1;
-    }
-
-
-        public static boolean ReadEpc() {
-        try { Thread.sleep(500); } catch (InterruptedException e) {}
-
-        int result = RFIDLibrary.INSTANCE.SAAT_6CReadEPCCode(handleReader, 0, 1, 0);
-        log("📡 Resultado SAAT_6CReadEPCCode: " + result);
-
-        if (result != 1) {
-            byte[] errMsg = new byte[256];
-            boolean gotMsg = RFIDLibrary.INSTANCE.SAAT_GetErrorMessage(handleReader, errMsg, errMsg.length);
-            log("❌ Erro ao ler EPC. Código retorno: " + result);
-            if (gotMsg) log("🪪 Descrição: " + new String(errMsg).trim());
-            return false;
-        }
-        return true;
-    }
-
     
+    int result = RFIDLibrary.INSTANCE.SAAT_Close(handleReader);
+    handleReader = null;
+    return result == 1;
+    }
+
+public static boolean ClearTagSelection() {
+    if (handleReader == null) {
+        System.out.println("Handle nulo ao tentar limpar seleção.");
+        return false;
+    }
+
+    PowerOff();
+    try { Thread.sleep(200); } catch (InterruptedException e) {}
+
+    byte memoryBank = 0x01;     
+    byte startAddress = 0x00;
+    byte matchBits = 0x00;
+    byte[] matchData = new byte[0];
+    byte matchLen = 0x00;
+    byte session = 0x00;
+    byte assertFlag = 0x00;
+    byte cutFlag = 0x00;
+
+    int result = RFIDLibrary.INSTANCE.SAAT_6CTagSelect(
+        handleReader,
+        memoryBank,
+        startAddress,
+        matchBits,
+        matchData,
+        matchLen,
+        session,
+        assertFlag,
+        cutFlag
+    );
+
+    if (result == 1) {
+        System.out.println("Seleção de tag limpa com sucesso.");
+        return true;
+    } else {
+        System.out.println("Falha ao limpar seleção. Código: " + result);
+        byte[] errMsg = new byte[256];
+        if (RFIDLibrary.INSTANCE.SAAT_GetErrorMessage(handleReader, errMsg, errMsg.length)) {
+            System.out.println("Erro do leitor: " + new String(errMsg).trim());
+        }
+        return false;
+    }
+}
+
+    public static void startContinuousRead() {
+    Thread leituraThread = new Thread(() -> {
+        System.out.println("Leitura periódica");
+
+        Set<String> epcsAtuais = new HashSet<>();
+
+        while (!Thread.currentThread().isInterrupted()) {
+            int result = RFIDLibrary.INSTANCE.SAAT_6CReadEPCCode(handleReader, 0, 1, 0); // leitura única
+            Set<String> epcsNovas = new HashSet<>();
+
+            if (result == 1) {
+                try { Thread.sleep(200); } catch (InterruptedException e) { break; }
+
+                while (true) {
+                    String epc = RecEpcMsgAsString();
+                    if (epc == null) break;
+                    epcsNovas.add(epc);
+                }
+
+                System.out.println("\nTags visíveis (" + epcsNovas.size() + "):");
+                for (String tag : epcsNovas) {
+                    System.out.println(tag);
+                }
+
+                System.out.println("Atualizado: " + new SimpleDateFormat("HH:mm:ss").format(new Date()));
+                epcsAtuais = epcsNovas;
+
+            } else {
+                byte[] errMsg = new byte[256];
+                if (RFIDLibrary.INSTANCE.SAAT_GetErrorMessage(handleReader, errMsg, errMsg.length)) {
+                    System.out.println("Erro ao ler EPC: " + new String(errMsg).trim());
+                }
+            }
+
+            try { Thread.sleep(2_000); } catch (InterruptedException e) { break; }
+        }
+
+        System.out.println("Leitura terminada.");
+    });
+
+    leituraThread.start();
+
+    JOptionPane.showMessageDialog(null, "Leitura periódica ativa.\nClica OK para parar.");
+    leituraThread.interrupt();
+    try { leituraThread.join(); } catch (InterruptedException e) {}
+}
 
 
-        public static void SetupAntenna() {
+    public static void SetupAntenna() {
         RFIDLibrary.INSTANCE.SAAT_SetAntennaPortEnable(handleReader, (byte) 1, (byte) 1); // ativa antena 1
         RFIDLibrary.INSTANCE.SAAT_SetAntennaPortEnable(handleReader, (byte) 1, (byte) 2);
         RFIDLibrary.INSTANCE.SAAT_SetAntennaPortEnable(handleReader, (byte) 1, (byte) 3); 
         RFIDLibrary.INSTANCE.SAAT_SetAntennaPortEnable(handleReader, (byte) 1, (byte) 4); 
 
-
         RFIDLibrary.INSTANCE.SAAT_SetAntennaPower(handleReader, (byte) 1, (byte) 30);     // potência máxima 
     }
 
-     public static String RecEpcMsgAsString() {
+    public static String RecEpcMsgAsString() {
         Memory data = new Memory(256);
         IntByReference dLen = new IntByReference(32);
         IntByReference nAnt = new IntByReference(1);
@@ -147,7 +212,6 @@ import java.util.Date;
             }
             System.out.println("Tag EPC: " + tag.toString());
         }
-
         return result == 1;
     }
 
@@ -159,7 +223,6 @@ import java.util.Date;
                 data[i / 2] = (byte) Integer.parseInt(hex.substring(i, i + 2), 16);
             return data;
         } catch (Exception e) {
-            log("❌ Erro a converter hex para bytes: " + e.getMessage());
             return null;
         }
     }
@@ -168,7 +231,6 @@ public static boolean SelectTagByEPC(String epcHex, int startAddress, int matchB
     EnsureReaderIsIdle();
 
     if (epcHex == null || epcHex.length() % 2 != 0) {
-        log("❌ EPC inválido.");
         return false;
     }
 
@@ -177,22 +239,21 @@ public static boolean SelectTagByEPC(String epcHex, int startAddress, int matchB
 
     int result = RFIDLibrary.INSTANCE.SAAT_6CTagSelect(
         handleReader,
-        (byte) 0x01,                 // EPC Data Area
-        (byte) startAddress,         // valor fornecido pelo utilizador
-        (byte) matchBits,            // valor fornecido pelo utilizador
+        (byte) 0x01,                
+        (byte) startAddress,        
+        (byte) matchBits,           
         epcBytes,
         (byte) epcBytes.length,
-        (byte) 0x00,                 // Session
-        (byte) 0x01,                 // Assert
-        (byte) 0x00                  // Cut
+        (byte) 0x00,                 
+        (byte) 0x01,                 
+        (byte) 0x00                  
     );
 
     if (result != 1) {
-        log("❌ Falha ao selecionar tag. Código: " + result);
+        System.out.println("Falha: Código:" + result);
         return false;
     }
 
-    log("✅ Tag selecionada com sucesso.");
     return true;
 }
 
@@ -210,40 +271,30 @@ public static String bytesToHex(byte[] bytes, int length) {
     }
 
     public static boolean WriteEPC(int codeLenWords, String newEpcHex, String accessPwdHex) {
-    log("✏️ A escrever EPC: " + newEpcHex);
-    log("🔢 CodeLen (words): " + codeLenWords);
-    log("🔐 Password: " + accessPwdHex);
 
     if (!newEpcHex.matches("^[0-9A-Fa-f]+$")) {
-        log("❌ EPC contém caracteres inválidos.");
+        System.out.print("Caracteres inválidos");
         return false;
     }
 
     if (newEpcHex.length() != codeLenWords * 4) {
-        log("⚠️ Comprimento do EPC inválido: " + newEpcHex.length() + " dígitos hex. Esperado: " + (codeLenWords * 4));
-        // Podes fazer return false aqui se quiseres ser estrito
+        System.out.println("Comprimento do EPC inválido:" + newEpcHex.length() + " dígitos hex. Esperado: " + (codeLenWords * 4));
     }
 
     byte[] epcBytes = hexStringToBytes(newEpcHex);
     byte[] pwdBytes = hexStringToBytes(accessPwdHex);
 
     if (epcBytes == null || pwdBytes == null || pwdBytes.length != 4) {
-        log("❌ Erro na conversão de hex para bytes.");
+        System.out.println("Erro na conversão.");
         return false;
     }
 
-    log("📦 EPC Bytes [" + epcBytes.length + "]: " + bytesToHex(epcBytes));
-    log("🔑 Password Bytes [" + pwdBytes.length + "]: " + bytesToHex(pwdBytes));
-
-    // ❗️ NÃO limpar seleção nem fazer ReadEpc()
-    log("🛑 Parar leitura ativa com PowerOff...");
     PowerOff();
     try { Thread.sleep(300); } catch (InterruptedException e) {}
 
     SetupAntenna();
     try { Thread.sleep(200); } catch (InterruptedException e) {}
 
-    log("🚀 Enviando SAAT_6CWriteEPCCode...");
 
     int result = RFIDLibrary.INSTANCE.SAAT_6CWriteEPCCode(
         handleReader,
@@ -254,27 +305,26 @@ public static String bytesToHex(byte[] bytes, int length) {
         (byte) epcBytes.length   // Número de bytes do EPC
     );
 
-    log("📥 Resultado SAAT_6CWriteEPCCode: " + result);
 
     if (result == 1) {
-        log("✅ EPC escrito com sucesso.");
+        System.out.println("EPC escrito com sucesso.");
         return true;
     } else {
         byte[] errMsg = new byte[256];
         if (RFIDLibrary.INSTANCE.SAAT_GetErrorMessage(handleReader, errMsg, errMsg.length)) {
-            log("🪪 Erro do leitor: " + new String(errMsg).trim());
+            System.out.println(" Erro do leitor: " + new String(errMsg).trim());
         } else {
-            log("⚠️ Erro desconhecido.");
+            System.out.println("Erro desconhecido.");
         }
         return false;
     }
 }
 
-    private static String bytesToHex(byte[] bytes) {
-        StringBuilder sb = new StringBuilder();
-        for (byte b : bytes) {
-            sb.append(String.format("%02X", b));
-        }
-        return sb.toString();
-    }}
+private static String bytesToHex(byte[] bytes) {
+    StringBuilder sb = new StringBuilder();
+    for (byte b : bytes) {
+        sb.append(String.format("%02X", b));
+    }
+    return sb.toString();
+}}
 
