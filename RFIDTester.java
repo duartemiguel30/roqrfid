@@ -8,7 +8,7 @@ import javax.swing.JOptionPane;
 public class RFIDTester {
 
     public static void main(String[] args) throws InterruptedException, IOException {
-        
+
         loadLib();
 
         if (!UserCall.TcpInit()) {
@@ -22,59 +22,126 @@ public class RFIDTester {
         }
 
         try {
-        UserCall.SetupAntenna();
+            UserCall.SetupAntenna();
 
-        System.out.println("Leitura periódica iniciada (a cada 60 segundos). Prima CTRL+C para sair.");
+            while (true) {
+                String[] opcoes = {"Ler EPC","Selecionar Tag por EPC","Reescrever EPC", "Reset seleção","Sair"};
 
-        while (true) {
-    System.out.println("➤ Nova leitura EPC...");
+                int escolha = JOptionPane.showOptionDialog(
+                        null, "Escolhe uma opção:", "Menu RFID",
+                        JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE,
+                        null, opcoes, opcoes[0]);
 
-    if (UserCall.ReadEpc()) {
-        Thread.sleep(200); // aguarda pela leitura física
+                if (escolha == 0) { //ler tags
 
-        Set<String> epcsLidas = new HashSet<>();
-        boolean encontrou = false;
+                    if (UserCall.ReadEpc()) {
+                        Thread.sleep(200);
 
-        // tentar ler até não haver mais tags disponíveis
-        while (true) {
-            String epc = UserCall.RecEpcMsgAsString();
-            if (epc == null) break;
+                        Set<String> epcsLidas = new HashSet<>();
+                        boolean encontrou = false;
 
-            if (epcsLidas.add(epc)) {
-                System.out.println("📡 Tag nova: " + epc);
-                encontrou = true;
+                        while (true) {
+                            String epc = UserCall.RecEpcMsgAsString();
+                            if (epc == null) break;
+
+                            if (epcsLidas.add(epc)) {
+                                System.out.println("Tag nova: " + epc);
+                                encontrou = true;
+                            }
+                        }
+
+                        if (!encontrou) {
+                            System.out.println("ℹNenhuma tag detetada.");
+                        }
+
+                    } else {
+                        System.err.println("Falha ao iniciar leitura EPC.");
+                    }
+
+                    System.out.println("⏳ A aguardar 10 segundos para próxima leitura...\n");
+                    Thread.sleep(1000); 
+                }
+
+                else if (escolha == 1) { 
+                    try {
+                        String epc = JOptionPane.showInputDialog("EPC a selecionar:");
+                        if (epc == null || epc.trim().isEmpty()) return;
+                        epc = epc.trim().toUpperCase();
+
+                        if (epc.length() % 2 != 0) {
+                            JOptionPane.showMessageDialog(null, "❌ O Match Data (EPC) deve ter número par de caracteres (ex: 24 para 12 bytes)", "Erro", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+
+                        String startAddrStr = JOptionPane.showInputDialog("Start Address(0):");
+                        if (startAddrStr == null || startAddrStr.trim().isEmpty()) return;
+                        int startAddress = Integer.parseInt(startAddrStr.trim());
+
+                        String matchBitsStr = JOptionPane.showInputDialog("Match bits(96):");
+                        if (matchBitsStr == null || matchBitsStr.trim().isEmpty()) return;
+                        int matchBits = Integer.parseInt(matchBitsStr.trim());
+
+                        boolean ativa = UserCall.SelectTagByEPC(epc, startAddress, matchBits);
+
+                        if (ativa) {
+                            JOptionPane.showMessageDialog(null, "✅ Tag selecionada com sucesso.", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                        } else {
+                            JOptionPane.showMessageDialog(null, "❌ A tag não respondeu à seleção. Verifica os dados inseridos e a posição da tag.", "Erro", JOptionPane.ERROR_MESSAGE);
+                        }
+
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(null, "❌ Erro de entrada: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+
+                else if (escolha == 2) { // Reescrever EPC
+                    try {
+                        String codeLenStr = JOptionPane.showInputDialog("Code Length (nº de words, ex: 6):");
+                        if (codeLenStr == null || codeLenStr.trim().isEmpty()) return;
+                        int codeLenWords = Integer.parseInt(codeLenStr.trim());
+
+                        String novoEpc = JOptionPane.showInputDialog("Novo EPC (hex):");
+                        if (novoEpc == null || novoEpc.trim().isEmpty()) return;
+                        novoEpc = novoEpc.trim().toUpperCase();
+
+                        String pwdInput = JOptionPane.showInputDialog("Tag Access Password (8 dígitos hex):");
+                        if (pwdInput == null || pwdInput.trim().isEmpty()) return;
+                        pwdInput = pwdInput.trim().toUpperCase();
+
+                        boolean sucesso = UserCall.WriteEPC(codeLenWords, novoEpc, pwdInput);
+                        JOptionPane.showMessageDialog(null,
+                            sucesso ? "✅ EPC reescrito com sucesso." : "❌ Falha ao escrever EPC.",
+                            sucesso ? "Sucesso" : "Erro",
+                            sucesso ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE
+                        );
+                    } catch (Exception e) {
+                        JOptionPane.showMessageDialog(null, "❌ Erro: " + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+
+                else if (escolha == 3 ) {
+                    //UserCall.ClearTagSelection();
+                    break;
+                }
+                else if ( escolha == 4 || escolha == JOptionPane.CLOSED_OPTION ) {
+                    break;
+                }
             }
-        }
 
-        if (!encontrou) {
-            System.out.println("ℹ️ Nenhuma tag detetada.");
-        }
-
-    } else {
-        System.err.println("❌ Falha ao iniciar leitura EPC.");
-    }
-
-    System.out.println("⏳ A aguardar 10 segundos para próxima leitura...\n");
-    Thread.sleep(10000); // espera 10 segundos
-}
-
-
-    } catch (Exception e) {
-        System.err.println("⚠️ Erro inesperado: " + e.getMessage());
-        e.printStackTrace();
-    }
-        finally {
-        System.out.println("Encerrando ligação com leitor...");
-
-        if (UserCall.handleReader != null) {
+        } catch (Exception e) {
+            System.err.println("⚠️ Erro inesperado: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            System.out.println("Encerrando ligação com leitor...");
+            if (UserCall.handleReader != null) {
                 UserCall.PowerOff();
                 UserCall.CloseConnection();
-
-            System.out.println("Ligação encerrada.");
-        } else {
-            System.out.println("Ligação não foi estabelecida corretamente.");
+                System.out.println("Ligação encerrada.");
+            } else {
+                System.out.println("Ligação não foi estabelecida corretamente.");
+            }
         }
-    }}
+    }
 
     public static void loadLib() throws IOException {
         File f = new File("RFIDAPI.dll");
