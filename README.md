@@ -8,9 +8,7 @@ The main goals of the system are to:
 - Increase customer satisfaction;  
 - Ensure better traceability of materials and operations within the company.
 
-By digitising and automating the handling of supply boxes, this solution supports a more streamlined workflow and enhanced visibility across the supply chain.
-
 ## How to run 
 
-javac -encoding UTF-8 -cp ".;lib/jna-5.17.0.jar" UserCall.java RFIDLibrary.java RFIDTester.java
+javac -encoding UTF-8 -cp ".;lib/jna-5.17.0.jar" UserCall.java RFIDLibrary.java RFIDTester.java     
 java -cp ".;lib/jna-5.17.0.jar" -Djava.library.path=. RFIDTester     
