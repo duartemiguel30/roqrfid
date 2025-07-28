@@ -33,36 +33,10 @@ public class RFIDTester {
                         null, opcoes, opcoes[0]);
 
                 if (escolha == 0) { //ler tags
+                
+                    UserCall.startContinuousRead();}
 
-                    if (UserCall.ReadEpc()) {
-                        Thread.sleep(200);
-
-                        Set<String> epcsLidas = new HashSet<>();
-                        boolean encontrou = false;
-
-                        while (true) {
-                            String epc = UserCall.RecEpcMsgAsString();
-                            if (epc == null) break;
-
-                            if (epcsLidas.add(epc)) {
-                                System.out.println("Tag nova: " + epc);
-                                encontrou = true;
-                            }
-                        }
-
-                        if (!encontrou) {
-                            System.out.println("ℹNenhuma tag detetada.");
-                        }
-
-                    } else {
-                        System.err.println("Falha ao iniciar leitura EPC.");
-                    }
-
-                    System.out.println("⏳ A aguardar 10 segundos para próxima leitura...\n");
-                    Thread.sleep(1000); 
-                }
-
-                else if (escolha == 1) { 
+                else if (escolha == 1) { // SelecionarEPC
                     try {
                         String epc = JOptionPane.showInputDialog("EPC a selecionar:");
                         if (epc == null || epc.trim().isEmpty()) return;
@@ -118,10 +92,8 @@ public class RFIDTester {
                         JOptionPane.showMessageDialog(null, "❌ Erro: " + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
                     }
                 }
-
                 else if (escolha == 3 ) {
-                    //UserCall.ClearTagSelection();
-                    break;
+                    UserCall.ClearTagSelection();
                 }
                 else if ( escolha == 4 || escolha == JOptionPane.CLOSED_OPTION ) {
                     break;
