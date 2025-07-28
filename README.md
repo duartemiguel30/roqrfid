@@ -10,5 +10,5 @@ The main goals of the system are to:
 
 ## How to run 
 
-javac -encoding UTF-8 -cp ".;lib/jna-5.17.0.jar" UserCall.java RFIDLibrary.java RFIDTester.java CaixaKanban.java ConexaoSQLServer.java
-java -cp ".;lib\mssql-jdbc-9.4.1.jre8.jar;lib\jna-5.17.0.jar" -Djava.library.path=. RFIDTester
+javac -encoding UTF-8 -cp "lib/jna-5.17.0.jar" -d bin src/UserCall.java src/RFIDLibrary.java src/RFIDTester.java src/CaixaKanban.java src/ConexaoSQLServer.java src/ReadEpcThread.java
+java -cp "bin;lib/mssql-jdbc-9.4.1.jre8.jar;lib/jna-5.17.0.jar" -Djava.library.path=lib RFIDTester       

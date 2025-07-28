@@ -145,7 +145,7 @@ public class RFIDTester {
     }
 
     public static void loadLib() throws IOException {
-        File f = new File("RFIDAPI.dll");
+        File f = new File("lib/RFIDAPI.dll");
         if (f.exists()) {
             System.load(f.getCanonicalPath());
         } else {
