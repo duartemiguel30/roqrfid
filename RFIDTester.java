@@ -25,7 +25,7 @@ public class RFIDTester {
             UserCall.SetupAntenna();
 
             while (true) {
-                String[] opcoes = {"Ler EPC","Selecionar Tag por EPC","Reescrever EPC", "Reset seleção","Sair"};
+                String[] opcoes = {"Ler EPC","Selecionar Tag por EPC","Reescrever EPC", "Reset seleção de tag","Sair"};
 
                 int escolha = JOptionPane.showOptionDialog(
                         null, "Escolhe uma opção:", "Menu RFID",
@@ -33,17 +33,17 @@ public class RFIDTester {
                         null, opcoes, opcoes[0]);
 
                 if (escolha == 0) { //ler tags
-                
+
                     UserCall.startContinuousRead();}
 
-                else if (escolha == 1) { // SelecionarEPC
+                else if (escolha == 1) { // selecionar tag por epc 
                     try {
                         String epc = JOptionPane.showInputDialog("EPC a selecionar:");
                         if (epc == null || epc.trim().isEmpty()) return;
                         epc = epc.trim().toUpperCase();
 
                         if (epc.length() % 2 != 0) {
-                            JOptionPane.showMessageDialog(null, "❌ O Match Data (EPC) deve ter número par de caracteres (ex: 24 para 12 bytes)", "Erro", JOptionPane.ERROR_MESSAGE);
+                            JOptionPane.showMessageDialog(null, "O Match Data (EPC) deve ter número par de caracteres (ex: 24 para 12 bytes)", "Erro", JOptionPane.ERROR_MESSAGE);
                             return;
                         }
 
@@ -58,38 +58,38 @@ public class RFIDTester {
                         boolean ativa = UserCall.SelectTagByEPC(epc, startAddress, matchBits);
 
                         if (ativa) {
-                            JOptionPane.showMessageDialog(null, "✅ Tag selecionada com sucesso.", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
+                            JOptionPane.showMessageDialog(null, "Tag selecionada com sucesso.", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
                         } else {
-                            JOptionPane.showMessageDialog(null, "❌ A tag não respondeu à seleção. Verifica os dados inseridos e a posição da tag.", "Erro", JOptionPane.ERROR_MESSAGE);
+                            JOptionPane.showMessageDialog(null, "A tag não respondeu à seleção. Verifica os dados inseridos e a posição da tag perto do leitor.", "Erro", JOptionPane.ERROR_MESSAGE);
                         }
 
                     } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(null, "❌ Erro de entrada: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(null, "Erro de entrada: " + ex.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
                     }
                 }
 
-                else if (escolha == 2) { // Reescrever EPC
+                else if (escolha == 2) { // reescrever EPC
                     try {
-                        String codeLenStr = JOptionPane.showInputDialog("Code Length (nº de words, ex: 6):");
+                        String codeLenStr = JOptionPane.showInputDialog("Code Length(6):");
                         if (codeLenStr == null || codeLenStr.trim().isEmpty()) return;
                         int codeLenWords = Integer.parseInt(codeLenStr.trim());
 
-                        String novoEpc = JOptionPane.showInputDialog("Novo EPC (hex):");
+                        String novoEpc = JOptionPane.showInputDialog("Novo EPC(hex):");
                         if (novoEpc == null || novoEpc.trim().isEmpty()) return;
                         novoEpc = novoEpc.trim().toUpperCase();
 
-                        String pwdInput = JOptionPane.showInputDialog("Tag Access Password (8 dígitos hex):");
+                        String pwdInput = JOptionPane.showInputDialog("Tag Access Password(00000000):");
                         if (pwdInput == null || pwdInput.trim().isEmpty()) return;
                         pwdInput = pwdInput.trim().toUpperCase();
 
                         boolean sucesso = UserCall.WriteEPC(codeLenWords, novoEpc, pwdInput);
                         JOptionPane.showMessageDialog(null,
-                            sucesso ? "✅ EPC reescrito com sucesso." : "❌ Falha ao escrever EPC.",
+                            sucesso ? "EPC reescrito com sucesso." : "Falha ao escrever EPC.",
                             sucesso ? "Sucesso" : "Erro",
                             sucesso ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE
                         );
                     } catch (Exception e) {
-                        JOptionPane.showMessageDialog(null, "❌ Erro: " + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(null, "Erro: " + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
                     }
                 }
                 else if (escolha == 3 ) {
@@ -101,10 +101,10 @@ public class RFIDTester {
             }
 
         } catch (Exception e) {
-            System.err.println("⚠️ Erro inesperado: " + e.getMessage());
+            System.err.println("Erro inesperado: " + e.getMessage());
             e.printStackTrace();
         } finally {
-            System.out.println("Encerrando ligação com leitor...");
+            System.out.println("A terminar ligação.");
             if (UserCall.handleReader != null) {
                 UserCall.PowerOff();
                 UserCall.CloseConnection();
