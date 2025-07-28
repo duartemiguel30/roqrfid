@@ -12,5 +12,5 @@ By digitising and automating the handling of supply boxes, this solution support
 
 ## How to run 
 
-javac -encoding UTF-8 -cp ".;lib/jna-5.17.0.jar" RFIDReset.java UserCall.java RFIDLibrary.java
-java -cp ".;lib/jna-5.17.0.jar" -Djava.library.path=. RFIDTester
+javac -encoding UTF-8 -cp ".;lib/jna-5.17.0.jar" UserCall.java RFIDLibrary.java RFIDTester.java
+java -cp ".;lib/jna-5.17.0.jar" -Djava.library.path=. RFIDTester     
