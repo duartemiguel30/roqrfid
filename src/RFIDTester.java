@@ -11,17 +11,14 @@ public class RFIDTester {
 
     loadLib();
 
+    if (!UserCall.iniciarLigacaoSQL()) {
+        JOptionPane.showMessageDialog(null, "Erro ao ligar à base de dados.");
+        System.exit(1);
+    }
+
     String[] modos = {"TCP", "COM", "Cancelar"};
     int escolhaModo = JOptionPane.showOptionDialog(
-        null,
-        "Como deseja comunicar com o leitor RFID?",
-        "Tipo de ligação",
-        JOptionPane.DEFAULT_OPTION,
-        JOptionPane.QUESTION_MESSAGE,
-        null,
-        modos,
-        modos[0]
-    );
+        null,"Como deseja comunicar com o leitor RFID?","Tipo de ligação",JOptionPane.DEFAULT_OPTION,JOptionPane.QUESTION_MESSAGE,null,modos,modos[0]);
 
     boolean ligado = false;
 
@@ -30,10 +27,7 @@ public class RFIDTester {
             ligado = true;
             System.out.println("Ligação TCP estabelecida com sucesso.");
         } else {
-            JOptionPane.showMessageDialog(null,
-                "Falha na ligação TCP ao leitor.",
-                "Erro TCP",
-                JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null,"Falha na ligação TCP ao leitor.","Erro TCP",JOptionPane.ERROR_MESSAGE);
         }
 
     } else if (escolhaModo == 1) { // COM
@@ -41,10 +35,7 @@ public class RFIDTester {
             ligado = true;
             System.out.println("Ligação COM estabelecida com sucesso.");
         } else {
-            JOptionPane.showMessageDialog(null,
-                "Falha na ligação COM ao leitor.",
-                "Erro COM",
-                JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null,"Falha na ligação COM ao leitor.","Erro COM",JOptionPane.ERROR_MESSAGE);
         }
 
     } else {
@@ -58,7 +49,6 @@ public class RFIDTester {
         JOptionPane.showMessageDialog(null, "Falha ao abrir leitor RFID.", "Erro", JOptionPane.ERROR_MESSAGE);
         return;
     }   
-
 
         try {
             UserCall.SetupAntenna();

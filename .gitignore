@@ -1,5 +1,12 @@
+/bin/
 *.class
-*.jar
-*.dll
-*.exe
-*.log
+.vs/
+*.iml
+.idea/
+/lib/*.dll
+/lib/*.jar
+*.tmp
+/src/ConexaoSQLServer.java
+/src/CaixaKanban.java
+/src/RFIDLibrary.java
+/src/UserCall.java
