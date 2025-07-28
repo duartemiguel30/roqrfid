@@ -15,9 +15,13 @@ import java.util.HashSet;
         public static final String ipReader = "10.0.7.10";
         public static final int portReader = 7086;
 
-        public static final String Comcon = "COM4";
+        public static final String Comcon = "COM7";
 
         public static Pointer handleReader = null; 
+
+        public static enum ModoLigacao { TCP, COM }
+        public static ModoLigacao modoAtual = null;
+
 
         
         
@@ -36,29 +40,67 @@ import java.util.HashSet;
             return result == 1;
             }
 
-        public static boolean ComInit() {
-            PointerByReference handleRef = new PointerByReference();
+    public static boolean ComInit() {
+        PointerByReference handleRef = new PointerByReference();
+        int result = RFIDLibrary.INSTANCE.SAAT_COMInit(handleRef, 0x00, Comcon, 115200);
 
-            int result = RFIDLibrary.INSTANCE.SAAT_COMInit(handleRef, 0x00, Comcon, 19200);
-            if (result == 1) {
-                handleReader = handleRef.getValue();
-            }
-                return result == 1;
-            }
+        if (result == 1) {
+            Pointer ptr = handleRef.getValue();
+            if (ptr != null && Pointer.nativeValue(ptr) != 0) {
+                int openResult = RFIDLibrary.INSTANCE.SAAT_Open(ptr);
 
-            public static boolean OpenReader() {
-                if (handleReader == null) {
-                    return false;
+                if (openResult == 1) {
+                    handleReader = ptr;
+                    modoAtual = ModoLigacao.COM;
+                    System.out.println("Ligação COM estabelecida.");
+                    return true;
+                } else {
+                    System.err.println("Leitor COM não respondeu.");
                 }
-
-            int result = RFIDLibrary.INSTANCE.SAAT_Open(handleReader);
-
-                if (result != 1) {
-                    handleReader = null;  
-                    return false;
-                }
-                return true;
+            } else {
+                System.err.println("SAAT_COMInit devolveu ponteiro nulo ou inválido.");
             }
+        } else {
+            System.err.println("SAAT_COMInit falhou.");
+        }
+
+        handleReader = null;
+        return false;
+    }
+
+
+    public static boolean OpenReader() {
+        if (handleReader == null) return false;
+
+        if (modoAtual == ModoLigacao.COM) {
+            return true;
+        }
+
+        int result = RFIDLibrary.INSTANCE.SAAT_Open(handleReader);
+
+        if (result != 1) {
+            if (handleReader != null && Pointer.nativeValue(handleReader) != 0) {
+                try {
+                    byte[] err = new byte[256];
+                    boolean gotMsg = RFIDLibrary.INSTANCE.SAAT_GetErrorMessage(handleReader, err, err.length);
+                    if (gotMsg) {
+                        System.err.println("Erro SAAT_Open (TCP): " + new String(err).trim());
+                    } else {
+                        System.err.println("Erro SAAT_Open (TCP): sem mensagem.");
+                    }
+                } catch (Throwable t) {
+                    System.err.println("Erro fatal ao obter mensagem: " + t.getMessage());
+                }
+            } else {
+                System.err.println("Erro SAAT_Open: handleReader inválido.");
+            }
+
+            handleReader = null;
+            return false;
+        }
+
+        return true;
+    }
 
     public static int PowerOff() {
         if (handleReader == null) {

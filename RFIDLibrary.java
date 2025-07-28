@@ -11,6 +11,7 @@ public interface RFIDLibrary extends StdCallLibrary {
     int SAAT_TCPInit(PointerByReference handle, String ip, int port);
     int SAAT_COMInit(PointerByReference handle, int reserved, String comPort, int baudRate);
     int SAAT_Open(Pointer handle); 
+    int SAAT_HeartSend(Pointer handle);
     int SAAT_Close(Pointer handle);
     int SAAT_SetAntennaPortEnable(Pointer handle, byte antNo, byte enable);
     int SAAT_SetAntennaPower(Pointer handle, byte antNo, byte power);

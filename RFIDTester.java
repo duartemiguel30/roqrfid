@@ -9,17 +9,56 @@ public class RFIDTester {
 
     public static void main(String[] args) throws InterruptedException, IOException {
 
-        loadLib();
+    loadLib();
 
-        if (!UserCall.TcpInit()) {
-            JOptionPane.showMessageDialog(null, "Falha ao estabelecer ligação TCP.", "Erro", JOptionPane.ERROR_MESSAGE);
-            return;
+    String[] modos = {"TCP", "COM", "Cancelar"};
+    int escolhaModo = JOptionPane.showOptionDialog(
+        null,
+        "Como deseja comunicar com o leitor RFID?",
+        "Tipo de ligação",
+        JOptionPane.DEFAULT_OPTION,
+        JOptionPane.QUESTION_MESSAGE,
+        null,
+        modos,
+        modos[0]
+    );
+
+    boolean ligado = false;
+
+    if (escolhaModo == 0) { // TCP
+        if (UserCall.TcpInit()) {
+            ligado = true;
+            System.out.println("Ligação TCP estabelecida com sucesso.");
+        } else {
+            JOptionPane.showMessageDialog(null,
+                "Falha na ligação TCP ao leitor.",
+                "Erro TCP",
+                JOptionPane.ERROR_MESSAGE);
         }
 
-        if (!UserCall.OpenReader()) {
-            JOptionPane.showMessageDialog(null, "Falha ao abrir leitor RFID.", "Erro", JOptionPane.ERROR_MESSAGE);
-            return;
+    } else if (escolhaModo == 1) { // COM
+        if (UserCall.ComInit()) {
+            ligado = true;
+            System.out.println("Ligação COM estabelecida com sucesso.");
+        } else {
+            JOptionPane.showMessageDialog(null,
+                "Falha na ligação COM ao leitor.",
+                "Erro COM",
+                JOptionPane.ERROR_MESSAGE);
         }
+
+    } else {
+        System.out.println("Utilizador cancelou a seleção de ligação.");
+        return;
+    }
+
+    if (!ligado) { return; }
+
+    if (!UserCall.OpenReader()) {
+        JOptionPane.showMessageDialog(null, "Falha ao abrir leitor RFID.", "Erro", JOptionPane.ERROR_MESSAGE);
+        return;
+    }   
+
 
         try {
             UserCall.SetupAntenna();
@@ -136,10 +175,9 @@ public class RFIDTester {
 
             if (JFileChooser.APPROVE_OPTION == jfc.showOpenDialog(null)) {
                 System.load(jfc.getSelectedFile().getCanonicalPath());
-                System.out.println("[INFO] DLL carregada via seleção manual: " + jfc.getSelectedFile().getName());
             } else {
                 JOptionPane.showMessageDialog(null, "Nenhuma DLL carregada", "Erro", JOptionPane.ERROR_MESSAGE);
-                System.err.println("[ERRO] DLL não carregada.");
+                System.err.println("DLL não carregada.");
             }
         }
     }
