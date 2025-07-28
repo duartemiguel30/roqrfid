@@ -7,10 +7,10 @@ import javax.swing.JOptionPane;
 public class UserCall {
 
     // atual 
-    public static final String ipReader = "x";
-    public static final int portReader = x;
+    public static final String ipReader = "10.0.7.10";
+    public static final int portReader = 7086;
 
-	public static final String Comcon = "x";
+	public static final String Comcon = "COM1";
 
     public static Pointer handleReader = null; 
 
