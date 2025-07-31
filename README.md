@@ -1,3 +1,7 @@
+## Warehouse Application
+
+![alt text](image.png)
+
 ## Project Overview
 
 This project was developed to manage and control item boxes that are prepared and supplied to vendors.  

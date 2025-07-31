@@ -11,28 +11,26 @@ public class RFIDTester {
 
     loadLib();
 
-    if (!UserCall.iniciarLigacaoSQL()) {
+    if (!UserCall.SQLConn()) {
         JOptionPane.showMessageDialog(null, "Erro ao ligar à base de dados.");
         System.exit(1);
     }
 
-    String[] modos = {"TCP", "COM", "Cancelar"};
-    int escolhaModo = JOptionPane.showOptionDialog(
-        null,"Como deseja comunicar com o leitor RFID?","Tipo de ligação",JOptionPane.DEFAULT_OPTION,JOptionPane.QUESTION_MESSAGE,null,modos,modos[0]);
+    String[] typesofconnection = {"TCP", "COM", "Cancelar"};
+    int typeconn = JOptionPane.showOptionDialog(null,"Como deseja comunicar com o leitor RFID?","Tipo de ligação",JOptionPane.DEFAULT_OPTION,JOptionPane.QUESTION_MESSAGE,null,typesofconnection,typesofconnection[0]);
 
-    boolean ligado = false;
+    boolean on = false;
 
-    if (escolhaModo == 0) { // TCP
+    if (typeconn == 0) { // TCP
         if (UserCall.TcpInit()) {
-            ligado = true;
-            System.out.println("Ligação TCP estabelecida com sucesso.");
+            on = true;
         } else {
             JOptionPane.showMessageDialog(null,"Falha na ligação TCP ao leitor.","Erro TCP",JOptionPane.ERROR_MESSAGE);
         }
 
-    } else if (escolhaModo == 1) { // COM
+    } else if (typeconn == 1) { // COM
         if (UserCall.ComInit()) {
-            ligado = true;
+            on = true;
             System.out.println("Ligação COM estabelecida com sucesso.");
         } else {
             JOptionPane.showMessageDialog(null,"Falha na ligação COM ao leitor.","Erro COM",JOptionPane.ERROR_MESSAGE);
@@ -43,7 +41,7 @@ public class RFIDTester {
         return;
     }
 
-    if (!ligado) { return; }
+    if (!on) { return; }
 
     if (!UserCall.OpenReader()) {
         JOptionPane.showMessageDialog(null, "Falha ao abrir leitor RFID.", "Erro", JOptionPane.ERROR_MESSAGE);
@@ -54,18 +52,15 @@ public class RFIDTester {
             UserCall.SetupAntenna();
 
             while (true) {
-                String[] opcoes = {"Ler EPC","Selecionar Tag por EPC","Reescrever EPC", "Reset seleção de tag","Sair"};
+                String[] options = {"Ler EPC","Selecionar Tag por EPC","Reescrever EPC", "Reset seleção de tag","Sair"};
 
-                int escolha = JOptionPane.showOptionDialog(
-                        null, "Escolhe uma opção:", "Menu RFID",
-                        JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE,
-                        null, opcoes, opcoes[0]);
+                int choice = JOptionPane.showOptionDialog(null, "Escolhe uma opção:", "Menu RFID",JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
 
-                if (escolha == 0) { //ler tags
+                if (choice == 0) { //ler tags
 
-                    UserCall.startContinuousRead();}
+                    UserCall.StartContinuousRead();}
 
-                else if (escolha == 1) { // selecionar tag por epc 
+                else if (choice == 1) { // selecionar tag por epc 
                     try {
                         String epc = JOptionPane.showInputDialog("EPC a selecionar:");
                         if (epc == null || epc.trim().isEmpty()) return;
@@ -84,9 +79,9 @@ public class RFIDTester {
                         if (matchBitsStr == null || matchBitsStr.trim().isEmpty()) return;
                         int matchBits = Integer.parseInt(matchBitsStr.trim());
 
-                        boolean ativa = UserCall.SelectTagByEPC(epc, startAddress, matchBits);
+                        boolean active = UserCall.SelectTagByEPC(epc, startAddress, matchBits);
 
-                        if (ativa) {
+                        if (active) {
                             JOptionPane.showMessageDialog(null, "Tag selecionada com sucesso.", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
                         } else {
                             JOptionPane.showMessageDialog(null, "A tag não respondeu à seleção. Verifica os dados inseridos e a posição da tag perto do leitor.", "Erro", JOptionPane.ERROR_MESSAGE);
@@ -97,7 +92,7 @@ public class RFIDTester {
                     }
                 }
 
-                else if (escolha == 2) { // reescrever EPC
+                else if (choice == 2) { // reescrever EPC
                     try {
                         String codeLenStr = JOptionPane.showInputDialog("Code Length(6):");
                         if (codeLenStr == null || codeLenStr.trim().isEmpty()) return;
@@ -111,24 +106,18 @@ public class RFIDTester {
                         if (pwdInput == null || pwdInput.trim().isEmpty()) return;
                         pwdInput = pwdInput.trim().toUpperCase();
 
-                        boolean sucesso = UserCall.WriteEPC(codeLenWords, novoEpc, pwdInput);
-                        JOptionPane.showMessageDialog(null,
-                            sucesso ? "EPC reescrito com sucesso." : "Falha ao escrever EPC.",
-                            sucesso ? "Sucesso" : "Erro",
-                            sucesso ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE
-                        );
+                        boolean sucesso = UserCall.WriteEPC(codeLenWords, novoEpc, pwdInput);JOptionPane.showMessageDialog(null,sucesso ? "EPC reescrito com sucesso." : "Falha ao escrever EPC.", sucesso ? "Sucesso" : "Erro",sucesso ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE);
                     } catch (Exception e) {
                         JOptionPane.showMessageDialog(null, "Erro: " + e.getMessage(), "Erro", JOptionPane.ERROR_MESSAGE);
                     }
                 }
-                else if (escolha == 3 ) {
+                else if (choice == 3 ) {
                     UserCall.ClearTagSelection();
                 }
-                else if ( escolha == 4 || escolha == JOptionPane.CLOSED_OPTION ) {
+                else if ( choice == 4 || choice == JOptionPane.CLOSED_OPTION ) {
                     break;
                 }
             }
-
         } catch (Exception e) {
             System.err.println("Erro inesperado: " + e.getMessage());
             e.printStackTrace();
