@@ -1,6 +1,6 @@
 ## Warehouse Application
 
-![alt text](image.png)
+![alt text](imagem.png)
 
 ## Project Overview
 
